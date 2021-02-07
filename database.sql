@@ -40,12 +40,29 @@ CREATE TABLE "users" (
   "updated_at" TIMESTAMP DEFAULT 'now()'
 );
 
+CREATE TABLE "orders" (
+  "id" SERIAL PRIMARY KEY,
+  "seller_id" INT NOT NULL,
+  "buyer_id" INT NOT NULL,
+  "product_id" INT NOT NULL,
+  "price" INT NOT NULL,
+  "quantity" INT DEFAULT 0,
+  "total" INT NOT NULL,
+  "status" TEXT NOT NULL,
+  "created_at" TIMESTAMP DEFAULT 'now()',
+  "updated_at" TIMESTAMP DEFAULT 'now()'
+);
+
 -- FOREING KEYS
 ALTER TABLE "products" ADD FOREIGN KEY ("category_id") REFERENCES "categories" ("id");
 
 ALTER TABLE "files" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
 
 ALTER TABLE "products" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+
+ALTER TABLE "orders" ADD FOREIGN KEY ("seller_id") REFERENCES "users" ("id");
+ALTER TABLE "orders" ADD FOREIGN KEY ("buyer_id") REFERENCES "users" ("id");
+ALTER TABLE "orders" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
 
 -- PROCEDURES
 CREATE FUNCTION trigger_set_TIMESTAMP()
@@ -66,6 +83,12 @@ EXECUTE PROCEDURE trigger_set_TIMESTAMP();
 -- AUTO UPDATED_AT USERS
 CREATE TRIGGER set_TIMESTAMP_users
 BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_TIMESTAMP();
+
+-- AUTO UPDATED_AT ORDERS
+CREATE TRIGGER set_TIMESTAMP_orders
+BEFORE UPDATE ON orders
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_TIMESTAMP();
 
@@ -101,6 +124,22 @@ ADD CONSTRAINT files_product_id_fkey
 FOREIGN KEY ("product_id")
 REFERENCES "products" ("id")
 ON DELETE CASCADE;
+
+
+-- SOFT DELETE
+ALTER TABLE products ADD COLUMN "deleted_at" timestamp;
+
+CREATE OR REPLACE RULE delete_product AS
+ON DELETE TO products DO INSTEAD
+UPDATE products
+SET deleted_at = now()
+WHERE products.id = OLD.id;
+
+CREATE OR REPLACE VIEW products_without_deleted AS
+SELECT * FROM products WHERE deleted_at IS null;
+
+ALTER TABLE products RENAME TO products_with_deleted;
+ALTER VIEW products_without_deleted RENAME TO products;
 
 /*
 --TO RUN SEEDS
