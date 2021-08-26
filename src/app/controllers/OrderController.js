@@ -125,12 +125,12 @@ module.exports = {
             if(order.status != 'open') return res.send("Can't do this action")
 
             const statuses = {
-                closed: "sold",
+                close: "sold",
                 cancel: "cancelled"
             }
-
+            
             order.status = statuses[action]
-
+           
             await Order.update(id, {
                 status: order.status
             })
