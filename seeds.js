@@ -67,5 +67,5 @@ async function init() {
     await createUsers()
     await createProducts()
 }
-
+ 
 init()
